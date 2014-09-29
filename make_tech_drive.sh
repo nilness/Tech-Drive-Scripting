@@ -127,7 +127,7 @@ fi
 verify_server () { # make sure the required server is mounted
 
 while [ ! -e "/Volumes/MHQ" ]; do
-    open -g "afp://3GS4ever!@192.168.1.47/MHQ" 
+    open -g "afp://192.168.1.47/MHQ" 
     sleep 3
 done
 } #verify_server
