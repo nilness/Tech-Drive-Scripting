@@ -71,14 +71,16 @@ if [[ $? = 0 ]]; then #rysnc succeeded
 # first we need to save the original disk id
     disk_id=`diskutil info "/Volumes/${target_volume_name}" | grep "Device Identifier:" | awk '{print $3}'`
     echo "Beginning to restore ${source_file_name} at ${disk_id}"
-    /usr/sbin/asr restore --source "./${source_file_name}" --target "/Volumes/${target_volume_name}" --erase --noprompt 2>> "${error_log}"
+    /usr/sbin/asr restore --source "./${source_file_name}" --target "/Volumes/${target_volume_name}" --erase --noprompt  2>> "${error_log}"
     if [[ $? != 0 ]]; then #restore failed
-         echo `date` " - Imaging ${source_file_name} failed." >> ${error_log}
+         echo `date` " - Imaging ${source_file_name} failed." 2>> $error_log
     else
          echo
          echo "Imaging ${source_file_name} succeeded."
 # rename the new partition if the restore succeeded
          diskutil renameVolume "${disk_id}" "${target_volume_name}" 2>> "${error_log}"
+# make sure it isn’t set to auto-open any windows
+         bless -folder "${target_volume_name}" 2>> "${error_log}"
     fi
 else
          echo `date` " - Rsync'ing ${source_file_name} to local directory failed. Make sure server is mounted." >> ${error_log}
@@ -101,8 +103,8 @@ fi
 } #copy_file
 #############################################################
 partition_drive () { # $1 disk_id of drive to partition
-
-diskutil PartitionDisk "${1}" APMFormat \
+# APMFormat for PPC & Intel compat, GPTFormat for Intel only
+diskutil PartitionDisk "${1}" GPTFormat \
 \
 jhfs+ "tech9" 30.0G \
 jhfs+ "tech8" 30.0G \
@@ -127,7 +129,7 @@ fi
 verify_server () { # make sure the required server is mounted
 
 while [ ! -e "/Volumes/MHQ" ]; do
-    open -g "afp://192.168.1.47/MHQ" 
+    open -g "afp://mhq@192.168.1.47/MHQ" 
     sleep 3
 done
 } #verify_server
@@ -165,6 +167,7 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
     exit 1
 fi
+
 echo
 read -p "Do you wish to cancel (y/n)?" -n 1
 if [[ ! $REPLY =~ ^[Nn]$ ]]
